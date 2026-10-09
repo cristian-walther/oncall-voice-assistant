@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>On-call Voice Assistant</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#fff; --fg:#1a1a1a; --muted:#666; --card:#f4f4f5; --accent:#d92d20; }
+    @media (prefers-color-scheme: dark) { :root { --bg:#111; --fg:#eee; --muted:#999; --card:#1c1c1e; } }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--fg); max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+    .badge { background: var(--accent); color: #fff; padding: .15rem .5rem; border-radius: 4px; font-size: .85rem; font-weight: 600; }
+    .card { background: var(--card); border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+    .muted { color: var(--muted); font-size: .9rem; }
+    button { font-size: 1rem; padding: .6rem 1.2rem; border-radius: 6px; border: 0; background: var(--accent); color: #fff; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+    #transcript p { margin: .4rem 0; }
+    .ai { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>On-call Voice Assistant</h1>
+  <div class="card">
+    <span class="badge" id="severity">-</span>
+    <strong id="incident-id"></strong> &middot; <span id="service"></span>
+    <p id="briefing" class="muted"></p>
+  </div>
+  <button id="start">Start briefing</button>
+  <button id="stop" disabled>End</button>
+  <p class="muted" id="status">Idle</p>
+  <div class="card" id="transcript"></div>
+
+  <script type="module">
+    import { Conversation } from "https://cdn.jsdelivr.net/npm/@elevenlabs/client/+esm";
+
+    const $ = (id) => document.getElementById(id);
+    let conversation = null;
+
+    function addLine(role, text) {
+      const p = document.createElement("p");
+      p.className = role;
+      p.textContent = `${role === "ai" ? "Agent" : "You"}: ${text}`;
+      $("transcript").appendChild(p);
+    }
+
+    function setStatus(text) { $("status").textContent = text; }
+
+    $("start").addEventListener("click", async () => {
+      $("start").disabled = true;
+      try {
+        setStatus("Requesting microphone...");
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const res = await fetch("/api/session");
+        const session = await res.json();
+        if (!res.ok) throw new Error(session.error ?? "Could not start session");
+
+        const v = session.dynamic_variables;
+        $("severity").textContent = v.severity;
+        $("incident-id").textContent = v.incident_id;
+        $("service").textContent = v.service;
+        $("briefing").textContent = v.incident_briefing;
+
+        conversation = await Conversation.startSession({
+          signedUrl: session.signed_url,
+          dynamicVariables: v,
+          onConnect: () => { setStatus("Connected"); $("stop").disabled = false; },
+          onDisconnect: () => { setStatus("Disconnected"); $("start").disabled = false; $("stop").disabled = true; },
+          onError: (err) => setStatus(`Error: ${err}`),
+          onModeChange: ({ mode }) => setStatus(mode === "speaking" ? "Agent speaking..." : "Listening..."),
+          onMessage: (msg) => addLine(msg.source === "ai" ? "ai" : "user", msg.message),
+        });
+      } catch (err) {
+        setStatus(`Error: ${err.message}`);
+        $("start").disabled = false;
+      }
+    });
+
+    $("stop").addEventListener("click", async () => {
+      await conversation?.endSession();
+    });
+  </script>
+</body>
+</html>

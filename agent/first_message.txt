@@ -1,0 +1,1 @@
+Hi, this is your on-call assistant. We have a {{severity}} incident on {{service}}. Do you have a moment for a quick briefing?

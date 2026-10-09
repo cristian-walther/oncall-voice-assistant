@@ -1,0 +1,67 @@
+{
+  "incident": {
+    "id": "INC-4821",
+    "title": "payments-api: error rate spike after v2.14.0 deploy",
+    "status": "triggered",
+    "urgency": "high",
+    "severity": "SEV-1",
+    "created_at": "2026-10-07T03:12:00-04:00",
+    "html_url": "https://example.pagerduty.com/incidents/INC-4821",
+    "service": {
+      "name": "payments-api",
+      "environment": "production",
+      "team": "Payments Platform",
+      "regions": ["us-east-1", "eu-west-1"],
+      "dependencies": ["ledger-db", "card-gateway", "fraud-scoring"]
+    },
+    "assignments": [
+      {
+        "assignee": "Jordan Rivera",
+        "role": "primary on-call",
+        "notified_at": "2026-10-07T03:12:20-04:00"
+      }
+    ],
+    "escalation_policy": {
+      "name": "Payments Platform - Critical",
+      "next_level": "Payments team lead",
+      "escalates_after_minutes": 15
+    },
+    "alert": {
+      "source": "Datadog",
+      "monitor_id": 1048822,
+      "monitor_name": "payments-api 5xx error rate > 5% for 5m",
+      "monitor_url": "https://app.datadoghq.example.com/monitors/1048822",
+      "metric": "error_rate",
+      "baseline_value": 0.2,
+      "current_value": 18.0,
+      "unit": "percent",
+      "threshold": 5.0
+    },
+    "suspected_cause": {
+      "type": "deployment",
+      "version": "v2.14.0",
+      "previous_version": "v2.13.4",
+      "deployed_at": "2026-10-07T03:04:00-04:00",
+      "deployed_by": "ci-bot",
+      "change_summary": "Added retry logic to card-gateway client; bumped connection pool settings"
+    },
+    "impact": {
+      "customer_facing": true,
+      "affected_endpoints": ["POST /v1/charges", "POST /v1/refunds"],
+      "estimated_failed_requests_per_minute": 420,
+      "affected_customers_estimate": "approximately 12 percent of checkout attempts"
+    },
+    "timeline": [
+      {"time": "03:04", "event": "Deployment v2.14.0 rolled out to production"},
+      {"time": "03:07", "event": "Error rate begins climbing above baseline of 0.2 percent"},
+      {"time": "03:12", "event": "Datadog monitor fires; incident INC-4821 triggered; on-call paged"}
+    ],
+    "recent_log_samples": [
+      "ERROR card-gateway client: connection pool exhausted (max=20, waiting=137)",
+      "WARN  retry attempt 3/3 failed for POST /authorize: timeout after 2000ms",
+      "ERROR charge handler: upstream unavailable, returning 503"
+    ],
+    "related_incidents": [],
+    "runbook_url": "https://wiki.example.com/runbooks/payments-api-high-error-rate"
+  }
+}
