@@ -34,6 +34,20 @@ def test_get_signed_url_calls_documented_endpoint(mock_get: MagicMock) -> None:
 
 
 @patch("src.start_conversation.requests.get")
+def test_get_signed_url_error_includes_body_but_not_key(mock_get: MagicMock) -> None:
+    mock_get.return_value.ok = False
+    mock_get.return_value.status_code = 401
+    mock_get.return_value.text = '{"detail": {"status": "missing_permissions", "key": "el-key"}}'
+
+    with pytest.raises(RuntimeError) as exc_info:
+        get_signed_url(make_settings())
+
+    message = str(exc_info.value)
+    assert "401" in message and "missing_permissions" in message
+    assert "el-key" not in message
+
+
+@patch("src.start_conversation.requests.get")
 def test_get_signed_url_requires_credentials(mock_get: MagicMock) -> None:
     with pytest.raises(RuntimeError):
         get_signed_url(make_settings(api_key=None))

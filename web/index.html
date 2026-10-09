@@ -35,10 +35,15 @@
     const $ = (id) => document.getElementById(id);
     let conversation = null;
 
+    // Expressive TTS output can contain audio tags such as [Warmly]; hide them.
+    const stripAudioTags = (text) => text.replace(/\[[^\]]*\]/g, "").replace(/\s{2,}/g, " ").trim();
+
     function addLine(role, text) {
+      const clean = stripAudioTags(text);
+      if (!clean) return;
       const p = document.createElement("p");
       p.className = role;
-      p.textContent = `${role === "ai" ? "Agent" : "You"}: ${text}`;
+      p.textContent = `${role === "ai" ? "Agent" : "You"}: ${clean}`;
       $("transcript").appendChild(p);
     }
 

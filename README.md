@@ -56,7 +56,14 @@ python -m pytest                             # tests (APIs are mocked)
 
 ## Design notes
 
-<!-- TODO: add your own notes: why dynamic variables instead of per-incident prompts, voice-first briefing style, etc. -->
+- **Least privilege.** The API key started with read-only agent scope. `get-signed-url` requires `convai_write`, so only that scope was raised.
+- **Draft vs. published.** The dashboard preview uses the agent's draft; API sessions use the published version. Publish after every prompt change before testing from this repo.
+- **Capability boundaries in the prompt.** Testing showed the agent claiming it had paged the secondary on-call, although it has no paging tool. Stating explicitly what it cannot do (and telling it to ask the engineer to page) fixed it. A PagerDuty tool with engineer confirmation is the first roadmap item.
+- **Dynamic variables instead of per-incident prompts.** Incident data is passed when each conversation starts, so concurrent incidents never overwrite each other's prompt.
+- **`end_call` enabled.** The built-in tool lets the agent actually hang up instead of leaving the line open.
+- **Latency and consistency.** Low reasoning effort and temperature 0 keep voice latency down and answers consistent. RAG is off because the runbook is short.
+- **Key stays server-side.** The signed URL means the API key never reaches the browser. The agent is public for the demo; enabling agent auth is a production step.
+- **Graceful degradation.** The summarizer falls back to a predefined briefing if Anthropic is unavailable (or no key / `USE_MOCK_SUMMARY=true`).
 
 ## How this would roll out at an enterprise customer
 

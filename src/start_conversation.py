@@ -10,6 +10,7 @@ Usage:
 
 import argparse
 import json
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
@@ -41,7 +42,9 @@ def get_signed_url(settings: Settings) -> str:
         headers={"xi-api-key": settings.elevenlabs_api_key},
         timeout=10,
     )
-    response.raise_for_status()
+    if not response.ok:
+        body = response.text.replace(settings.elevenlabs_api_key, "***")
+        raise RuntimeError(f"ElevenLabs returned HTTP {response.status_code}: {body}")
     return str(response.json()["signed_url"])
 
 
@@ -65,6 +68,7 @@ def make_handler(settings: Settings, variables: dict[str, str]) -> type[BaseHTTP
                     }
                     self._send(200, json.dumps(payload).encode(), "application/json")
                 except (RuntimeError, requests.RequestException) as exc:
+                    print(f"/api/session failed: {exc}", file=sys.stderr)
                     error = json.dumps({"error": str(exc)}).encode()
                     self._send(502, error, "application/json")
             else:
