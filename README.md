@@ -67,30 +67,39 @@ python -m pytest                             # tests (APIs are mocked)
 
 ## How this would roll out at an enterprise customer
 
+> Demo with mock data: nothing here has been piloted or measured.
+
 ### Business value
 
-<!-- TODO: fill in with your own reasoning/observations. Prompts to consider:
-- Cost of a minute of SEV-1 downtime for a payments business
-- Time an engineer spends reading alerts, dashboards and the runbook before acting at 3 AM
-- Hands-free briefing while moving (laptop not open yet)
-- Consistency: every responder gets the same runbook-grounded first steps -->
+The value hypothesis is faster, more consistent first minutes of a SEV-1:
+
+- **Less time to orientation.** A responder paged at night otherwise has to read the alert, open dashboards and find the runbook before acting. A spoken briefing of what is failing, since when and the likely cause can happen while they are still getting to a laptop.
+- **Consistent first step.** Every responder hears the same runbook-grounded suggestion, regardless of who is on call or how familiar they are with the service.
+- **Hands-free.** The briefing works when the laptop is not open yet.
+- **Cost of delay.** The cost of a minute of downtime differs per customer and per service, so it is an input to collect during the pilot, not a number to assume.
+
+What it deliberately does not do: it cannot page, notify or change anything. It briefs and suggests; the engineer acts.
 
 ### Metrics
 
-| Metric | Definition | Baseline | Pilot target |
+No numbers are claimed here. Each row says what is measured and where the baseline comes from; targets are agreed with the customer after the baseline is known.
+
+| Metric | Definition | Baseline source | Pilot measurement |
 |---|---|---|---|
-| MTTA (mean time to acknowledge) | Page sent to human acknowledges | _TODO_ | _TODO_ |
-| Time to first correct action | Acknowledge to first runbook-appropriate step | _TODO_ | _TODO_ |
-| Escalation accuracy | Share of escalations that were needed and went to the right team | _TODO_ | _TODO_ |
-| Briefing accuracy | Share of briefings with no factual error vs. the source alert | _TODO_ | _TODO_ |
-| Responder trust / CSAT | Post-incident survey | _TODO_ | _TODO_ |
+| MTTA (mean time to acknowledge) | Page sent to human acknowledges | The customer's PagerDuty analytics for the pilot services, for a period before rollout | Same report after rollout, same services, compared against the baseline period |
+| Time to first correct action | Acknowledge to first runbook-appropriate step | Reviewed from past incident timelines and postmortems (manual labeling, since this is rarely recorded) | Incident timeline plus conversation transcripts, labeled by a reviewer |
+| Escalation accuracy | Share of escalations that were needed and went to the right team | Past incidents reviewed against the escalation policy | Conversation transcripts compared with what the runbook and policy required |
+| Briefing accuracy | Share of briefings with no factual error vs. the source alert | Not applicable (new capability) | Spot-check of briefings against the alert payload, with errors recorded by type |
+| Responder trust / CSAT | Whether responders found the assistant useful and safe to rely on | Short survey before the pilot, if the customer agrees | Short post-incident survey for responders who used it |
+
+Caveats to state up front: incident mix and severity vary between periods, so before/after comparisons need care, and a small number of incidents will not support strong conclusions.
 
 ### Pilot-to-production plan
 
-1. **Pilot (shadow mode):** one team, replay past incidents, compare briefings with what responders actually did. _TODO: observations_
-2. **Limited live:** the same team, business hours first, then on-call. Human stays in the loop; the agent only briefs and suggests. _TODO: observations_
-3. **Production:** more teams, real PagerDuty webhooks replace the mock payload, per-service runbooks, access control and audit logging for conversations. _TODO: observations_
-4. **Guardrails:** read-only by default, no destructive actions without explicit human confirmation, data retention and PII policy reviewed with security. _TODO: customer-specific constraints_
+1. **Pilot (shadow mode):** one team, one or two services. Replay past incidents through the summarizer and compare briefings with the real alert data and with what responders actually did. Exit criterion: briefings are factually accurate on the replayed set, reviewed by the team.
+2. **Limited live:** the same team, business hours first, then on-call. The human stays in the loop; the agent only briefs and suggests. Collect the metrics above and review transcripts weekly. Exit criterion: agreed with the team before starting.
+3. **Production:** more teams, real PagerDuty webhooks replace the mock payload, per-service runbooks, agent authentication enabled, and access control and audit logging for conversations.
+4. **Guardrails:** read-only by default; no action on production systems without explicit human confirmation; data retention and PII handling for transcripts and audio reviewed with the customer's security team. Customer-specific constraints are gathered during the pilot kickoff.
 
 ## Docs used
 
