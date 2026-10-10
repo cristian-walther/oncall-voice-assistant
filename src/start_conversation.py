@@ -60,12 +60,14 @@ def make_handler(settings: Settings, variables: dict[str, str]) -> type[BaseHTTP
         def do_GET(self) -> None:
             if self.path == "/":
                 self._send(200, PAGE_PATH.read_bytes(), "text/html; charset=utf-8")
+            elif self.path == "/api/incident":
+                # Computed once at startup; the page shows it on load and reuses
+                # the same values when the session starts.
+                self._send(200, json.dumps(variables).encode(), "application/json")
             elif self.path == "/api/session":
+                # Signed URLs expire after 15 minutes, so fetch one per session.
                 try:
-                    payload = {
-                        "signed_url": get_signed_url(settings),
-                        "dynamic_variables": variables,
-                    }
+                    payload = {"signed_url": get_signed_url(settings)}
                     self._send(200, json.dumps(payload).encode(), "application/json")
                 except (RuntimeError, requests.RequestException) as exc:
                     print(f"/api/session failed: {exc}", file=sys.stderr)
