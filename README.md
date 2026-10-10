@@ -4,6 +4,10 @@ A voice agent that briefs an on-call engineer about a production incident. The a
 
 All data in this repo is mock data. Nothing comes from a real PagerDuty account or from customers.
 
+## Demo
+
+[Watch the demo on Loom](https://www.loom.com/share/e76720b0431f4412a1157ed61d4564bd)
+
 ## How it works
 
 ```
