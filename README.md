@@ -64,6 +64,7 @@ python -m pytest                             # tests (APIs are mocked)
 - **Latency and consistency.** Low reasoning effort and temperature 0 keep voice latency down and answers consistent. RAG is off because the runbook is short.
 - **Key stays server-side.** The signed URL means the API key never reaches the browser. The agent is public for the demo; enabling agent auth is a production step.
 - **Graceful degradation.** The summarizer falls back to a predefined briefing if Anthropic is unavailable (or no key / `USE_MOCK_SUMMARY=true`).
+- **Thinking disabled for the summary.** Haiku's adaptive thinking could consume the whole output budget and leave no text, which made the summarizer silently fall back to the mock briefing. Thinking is now disabled for this short task, and empty responses log a warning.
 
 ## How this would roll out at an enterprise customer
 
